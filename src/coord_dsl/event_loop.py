@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: MPL-2.0
-class Events:
+class EventData:
     def __init__(self, num_events):
         self.num_events = num_events
         self.current_events = [False] * num_events
         self.future_events = [False] * num_events
 
 
-def produce_event(event_data: Events, event_index: int):
+def produce_event(event_data: EventData, event_index: int):
     assert event_data.future_events is not None, "Event buffers not initialized"
     assert (
         0 <= event_index < event_data.num_events
@@ -14,7 +14,7 @@ def produce_event(event_data: Events, event_index: int):
     event_data.future_events[event_index] = True
 
 
-def consume_event(event_data: Events, event_index: int) -> bool:
+def consume_event(event_data: EventData, event_index: int) -> bool:
     assert event_data.current_events is not None, "Event buffers not initialized"
     assert (
         0 <= event_index < event_data.num_events
@@ -22,7 +22,7 @@ def consume_event(event_data: Events, event_index: int) -> bool:
     return event_data.current_events[event_index]
 
 
-def reconfig_event_buffers(event_data: Events):
+def reconfig_event_buffers(event_data: EventData):
     assert (
         event_data.future_events is not None and event_data.current_events is not None
     ), "Event buffers not initialized"

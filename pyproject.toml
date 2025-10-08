@@ -31,4 +31,5 @@ where = ["src"]
 [project.entry-points."textx_generators"]
 "fsm_json" = "coord_dsl.generators.fsm_gen:fsm_json_gen"
 "fsm_cpp" = "coord_dsl.generators.fsm_gen:fsm_cpp_gen"
+"fsm_py" = "coord_dsl.generators.fsm_gen:fsm_py_gen"
 "fsm_console" = "coord_dsl.generators.fsm_gen:fsm_console_gen"

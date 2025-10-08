@@ -4,12 +4,12 @@ import time
 from enum import IntEnum, auto
 from dataclasses import dataclass
 from coord_dsl.event_loop import (
-    Events,
+    EventData,
     produce_event,
     consume_event,
     reconfig_event_buffers,
 )
-from coord_dsl.fsm import FSM, Transition, EventReaction, fsm_step
+from coord_dsl.fsm import FSMData, Transition, EventReaction, fsm_step
 
 
 class EventID(IntEnum):
@@ -90,7 +90,7 @@ def green_yel_behavior(u: UserData):
     u.redOn, u.yellowOn, u.greenOn = False, True, True
 
 
-def fsm_behavior(fsm: FSM, user_data: UserData):
+def fsm_behavior(fsm: FSMData, user_data: UserData):
     cs = fsm.current_state_index
     if cs == StateID.RED:
         red_behavior(user_data)
@@ -178,9 +178,9 @@ def main(global_timeout_secs: float, single_light_timeout_secs: float):
     }
     event_reactions = [reactions_dict[rid] for rid in ReactionID]
 
-    events = Events(len(EventID))
+    events = EventData(len(EventID))
     user_data = UserData()
-    fsm = FSM(
+    fsm = FSMData(
         event_data=events,
         num_states=len(StateID),
         start_state_index=StateID.START,

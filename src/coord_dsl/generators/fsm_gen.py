@@ -65,7 +65,9 @@ def parse_fsm(model):
             "when": reaction.when.name,
             "do": reaction.do.name,
             "num_fires": len(reaction.fires),
-            "fires": [event.name for event in reaction.fires] if len(reaction.fires) > 0 else None,
+            "fires": [event.name for event in reaction.fires]
+            if len(reaction.fires) > 0
+            else None,
         }
 
     return fsm
@@ -105,6 +107,36 @@ def fsm_cpp_gen(metamodel, model, output_path, overwrite, debug, **custom_args):
     if not output_path:
         model_path = Path(model._tx_filename).parent
         output_path = f"{model_path}/{fsm_name}.fsm.hpp"
+
+    with open(output_path, "w") as f:
+        f.write(output)
+    print(f"FSM C code generated at {output_path}")
+
+
+@generator("fsm", "py")
+def fsm_py_gen(metamodel, model, output_path, overwrite, debug, **custom_args):
+    """Generates a .py file with the FSM datastructures"""
+
+    print(f"Generating Python code for FSM: {model.name}")
+
+    # get module path
+    module_path = Path(__file__).parent.parent
+    env = Environment(loader=FileSystemLoader(module_path / "templates"))
+    template = env.get_template("fsm.py.jinja2")
+
+    fsm = parse_fsm(model)
+
+    fsm_name = model.name
+
+    output = template.render(
+        {
+            "data": fsm,
+        }
+    )
+
+    if not output_path:
+        model_path = Path(model._tx_filename).parent
+        output_path = f"{model_path}/fsm_{fsm_name}.py"
 
     with open(output_path, "w") as f:
         f.write(output)

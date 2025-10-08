@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MPL-2.0
 from dataclasses import dataclass
-from coord_dsl.event_loop import Events, produce_event, consume_event
+from coord_dsl.event_loop import EventData, produce_event, consume_event
 
 
 @dataclass
@@ -17,8 +17,8 @@ class EventReaction:
 
 
 @dataclass
-class FSM:
-    event_data: Events
+class FSMData:
+    event_data: EventData
     num_states: int
     start_state_index: int
     end_state_index: int
@@ -31,8 +31,8 @@ class FSM:
             self.current_state_index = self.start_state_index
 
 
-def fsm_step(fsm: FSM):
-    assert fsm.num_states > 0, "FSM must have at least one state"
+def fsm_step(fsm: FSMData):
+    assert fsm.num_states > 0, "FSMData must have at least one state"
     assert fsm.current_state_index is not None
     assert 0 <= fsm.start_state_index < fsm.num_states
     assert 0 <= fsm.end_state_index < fsm.num_states
