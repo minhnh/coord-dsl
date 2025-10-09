@@ -1,0 +1,96 @@
+"""
+This is an auto-generated file. Do not edit it directly.
+
+FSM: {{ data.name }}
+FSM Description: {{ data.description }}
+
+Examples:
+
+>>> from coord_dsl.fsm import fsm_step
+>>> from coord_dsl.event_loop import reconfig_event_buffers
+>>> from fsm_example import create_fsm
+>>> fsm = create_fsm()
+>>> while True:
+...     if fsm.current_state_index == StateID.S_EXIT:
+...         print("State machine completed successfully")
+...         break
+...     fsm_behavior(fsm, ud) # user-defined behaviour with user data
+...     fsm_step(fsm)
+...     reconfig_event_buffers(fsm.event_data)
+"""
+from enum import IntEnum, auto
+from coord_dsl.event_loop import EventData
+from coord_dsl.fsm import FSMData, Transition, EventReaction
+
+
+# Event IDs
+class EventID(IntEnum):
+{%- for event in data.events %}
+    {{ event }}{% if loop.first %} = 0{% else %} = auto(){% endif %}
+{%- endfor %}
+
+
+# State IDs
+class StateID(IntEnum):
+{%- for state in data.states %}
+    {{ state }}{% if loop.first %} = 0{% else %} = auto(){% endif %}
+{%- endfor %}
+
+
+# Transition IDs
+class TransitionID(IntEnum):
+{%- for transition in data.transitions %}
+    {{ transition }}{% if loop.first %} = 0{% else %} = auto(){% endif %}
+{%- endfor %}
+
+
+# Event reaction IDs
+class ReactionID(IntEnum):
+{%- for reaction in data.reactions %}
+    {{ reaction }}{% if loop.first %} = 0{% else %} = auto(){% endif %}
+{%- endfor %}
+
+
+def create_fsm() -> FSMData:
+    """Creates the FSM data structure."""
+    # Transitions
+    trans_dict = {
+    {%- for trans_name, trans_data in data.transitions_table.items() %}
+        TransitionID.{{trans_name}}: Transition(StateID.{{trans_data.from}}, StateID.{{trans_data.to}}),
+    {%- endfor %}
+    }
+    trans_list = [trans_dict[i] for i in TransitionID]
+
+    # Event Reactions
+    evt_reaction_dict = {
+    {%- for react_name, react_data in data.reactions_table.items() %}
+        ReactionID.{{react_name}}: EventReaction(
+            condition_event_index=EventID.{{react_data.when}},
+            transition_index=TransitionID.{{react_data.do}},
+            {%- if react_data.fires %}
+            fired_event_indices=[
+            {%- for event in react_data.fires %}
+                EventID.{{ event }},
+            {%- endfor %}
+            ],
+            {%- else %}
+            fired_event_indices=[],
+            {%- endif %}
+        ),
+    {%- endfor %}
+    }
+    evt_reaction_list = [evt_reaction_dict[i] for i in ReactionID]
+
+    # Events
+    events = EventData(len(EventID))
+
+    # Return FSM Data
+    return FSMData(
+        event_data=events,
+        num_states=len(StateID),
+        start_state_index=StateID.{{ data.start_state }},
+        end_state_index=StateID.{{ data.end_state }},
+        transitions=trans_list,
+        event_reactions=evt_reaction_list,
+        current_state_index=StateID.{{ data.current_state }},
+    )
