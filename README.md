@@ -69,7 +69,7 @@ REACTIONS:
         WHEN: @E_EVENT3
         DO: @T_STATE2_EXIT
 ```
-- An example model is provided in the [models](examples/models/program.fsm) directory.
+- An example model is provided in the [models](examples/models/fsm/example.fsm) directory.
 
 ### States
 - States represent the different behaviors of an activity.

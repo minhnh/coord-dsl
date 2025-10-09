@@ -14,7 +14,7 @@ from coord_dsl.event_loop import (
     reconfig_event_buffers,
 )
 from coord_dsl.fsm import FSMData, fsm_step
-from fsm.fsm_example import EventID, StateID, create_fsm
+from fsm_example import EventID, StateID, create_fsm
 
 
 def signal_handler(sig, frame):
@@ -68,7 +68,9 @@ def fsm_behavior(fsm: FSMData, ud: UserData):
         print(f"Producing E_EXECUTE_EXIT from state '{StateID(cs).name}'")
         produce_event(fsm.event_data, EventID.E_EXECUTE_EXIT)
 
-    ud.transition_time = ud.current_time + ud.state_duration
+    # ensure loop period
+    while ud.transition_time < ud.current_time:
+        ud.transition_time += ud.state_duration
 
 
 def main(state_duration_sec: float):
