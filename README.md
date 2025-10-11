@@ -84,7 +84,7 @@ REACTIONS:
 * The `START_STATE` and `END_STATE` variables define the initial and final states of the FSM.
 * The `CURRENT_STATE` variable defines where the FSM starts from.
 
-    > [!IMPORTANT]
+    > **_NOTE:_**
     > The included event loop implementation can only work with states that spans at least 2 "steps."
     > Function calls that does not span 2 steps should not be in a separate state.
     > For more details see commit [coord-dsl@5d983e2](https://github.com/secorolab/coord-dsl/commit/5d983e2011957c373ca829f538c3baaa79266308).
@@ -108,7 +108,7 @@ REACTIONS:
 * The `DO` keyword defines the action to be taken when the `event` occurs.
 * The `FIRES` keyword defines the `set` of events (or none) that are fired as a result of the transition.
 
-    > [!IMPORTANT]
+    > **_NOTE:_**
     > The order of the `REACTIONS` section is important. The first reaction that matches the `event` and that satisfies
     > the `transition` will be executed. If multiple reactions match, only the first one will be executed.
 
