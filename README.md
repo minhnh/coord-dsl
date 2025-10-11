@@ -87,7 +87,7 @@ REACTIONS:
     > [!IMPORTANT]
     > The included event loop implementation can only work with states that spans at least 2 "steps."
     > Function calls that does not span 2 steps should not be in a separate state.
-    > For more details see commit secorolab/coord-dsl@5d983e2011957c373ca829f538c3baaa79266308
+    > For more details see commit [coord-dsl@5d983e2](https://github.com/secorolab/coord-dsl/commit/5d983e2011957c373ca829f538c3baaa79266308).
 
 ##### Events
 
