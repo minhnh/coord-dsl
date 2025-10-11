@@ -17,6 +17,9 @@ from coord_dsl.fsm import FSMData, fsm_step
 from fsm_example import EventID, StateID, create_fsm
 
 
+LOOP_DURATION = 0.01
+
+
 def signal_handler(sig, frame):
     print("You pressed Ctrl+C, exiting!")
     sys.exit(0)
@@ -50,7 +53,7 @@ def idle_on_end(fsm: FSMData, ud: UserData):
     ud.compile = not ud.compile
 
 
-def generic_step(fsm: FSMData, ud: UserData, start_event: EventID):
+def generic_step(fsm: FSMData, ud: UserData, start_event: EventID) -> bool:
     """Return True if timeout has occurred, i.e., state finished."""
     if consume_event(fsm.event_data, start_event):
         print(f"Entered state '{StateID(fsm.current_state_index).name}'")
@@ -75,6 +78,7 @@ def fsm_behavior(fsm: FSMData, ud: UserData, bhv_data: dict):
     bhv_data_cs = bhv_data[cs]
     assert "step" in bhv_data_cs, f"no step defined for state: {cs}"
     if not bhv_data_cs["step"](fsm, ud):
+        # not done
         return
 
     if "on_end" in bhv_data_cs:
@@ -117,23 +121,26 @@ def main(state_duration_sec: float):
 
     now = time.time()
     ud = UserData(current_time=now, state_duration=state_duration_sec)
+    loop_timeout = now + LOOP_DURATION
     while True:
         if fsm.current_state_index == StateID.S_EXIT:
             print("State machine completed successfully")
             break
-        # Behaviours
+
+        # Ensure loop rate & produce step event
+        reconfig_event_buffers(fsm.event_data)
+        while now < loop_timeout:
+            now = time.time()
+        while loop_timeout < now:
+            loop_timeout += LOOP_DURATION
         produce_event(fsm.event_data, EventID.E_STEP)
 
+        # FSM behaviour
         fsm_behavior(fsm, ud, fsm_bhv)
 
-        reconfig_event_buffers(fsm.event_data)
-
         # State transitions
-        fsm_step(fsm)
-
         reconfig_event_buffers(fsm.event_data)
-
-        time.sleep(0.01)
+        fsm_step(fsm)
 
 
 if __name__ == "__main__":
