@@ -23,7 +23,10 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"coord_dsl" = ["*.tx"]
+"coord_dsl" = [
+    "metamodels/*.tx",
+    "templates/*.jinja2"
+]
 
 [project.entry-points."textx_languages"]
 "fsm" = "coord_dsl:fsm_meta"
