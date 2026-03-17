@@ -56,16 +56,8 @@ int main() {
 #include "coord2b/functions/event_loop.h"
 #include <new>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 struct fsm_nbx * create_fsm();
 void destroy_fsm(struct fsm_nbx * fsm);
-
-#ifdef __cplusplus
-}
-#endif
 
 // sm states
 enum e_states {
