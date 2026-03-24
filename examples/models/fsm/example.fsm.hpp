@@ -52,8 +52,8 @@ int main() {
 #ifndef EXAMPLE_FSM_HPP
 #define EXAMPLE_FSM_HPP
 
-#include "coord2b/functions/fsm.h"
-#include "coord2b/functions/event_loop.h"
+#include "coord2b/types/fsm.h"
+#include "coord2b/types/event_loop.h"
 #include <new>
 
 struct fsm_nbx * create_fsm();
@@ -117,9 +117,13 @@ inline struct fsm_nbx * create_fsm() {
         .numReactions = NUM_REACTIONS,
         .numTransitions = NUM_TRANSITIONS,
         .numStates = NUM_STATES,
+        .states = nullptr,
         .startStateIndex = S_START,
         .endStateIndex = S_EXIT,
-        .currentStateIndex = S_START
+        .currentStateIndex = S_START,
+        .eventData = nullptr,
+        .reactions = nullptr,
+        .transitions = nullptr
     };
     if (!fsm) return nullptr;
 

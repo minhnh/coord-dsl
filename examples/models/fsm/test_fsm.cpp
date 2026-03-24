@@ -4,7 +4,7 @@
 #include <ostream>
 #include <thread>
 #include "coord2b/functions/event_loop.h"
-#include "coord2b/types/fsm.h"
+#include "coord2b/functions/fsm.h"
 #include "example.fsm.hpp"
 
 sig_atomic_t stopFlag = 0;
