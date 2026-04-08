@@ -1,14 +1,14 @@
 /*
  * This is an auto-generated file. Do not edit it directly.
  *
- * FSM: example
+ * FSM: ex_fsm
  * FSM Description: Example of a simple FSM
  *
  * -----------------------------------------------------
  * Usage example:
  * -----------------------------------------------------
 
-#include "example.fsm.hpp"
+#include "ex_fsm.fsm.hpp"
 
 struct user_data {
 
@@ -49,8 +49,8 @@ int main() {
  * -----------------------------------------------------
  */
 
-#ifndef EXAMPLE_FSM_HPP
-#define EXAMPLE_FSM_HPP
+#ifndef EX_FSM_FSM_HPP
+#define EX_FSM_FSM_HPP
 
 #include "coord2b/types/fsm.h"
 #include "coord2b/types/event_loop.h"
@@ -218,9 +218,10 @@ inline struct fsm_nbx * create_fsm() {
         {
             .conditionEventIndex = E_STEP,
             .transitionIndex = T_START_CONFIGURE,
-            .numFiredEvents = 1,
-            .firedEventIndices = new unsigned int[1]{
-                E_CONFIGURE_ENTERED 
+            .numFiredEvents = 2,
+            .firedEventIndices = new unsigned int[2]{
+                E_CONFIGURE_ENTERED, 
+                E_STEP 
             },
         }, 
         {
@@ -312,4 +313,4 @@ inline void destroy_fsm(struct fsm_nbx * fsm) {
     delete fsm;
 }
 
-#endif // EXAMPLE_FSM_HPP
+#endif // EX_FSM_FSM_HPP

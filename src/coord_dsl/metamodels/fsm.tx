@@ -1,19 +1,22 @@
-FSM: 
-	"NAME" ":" name=ID
-	(
-		"DESCRIPTION" ":" description=STRING
-	)?
-	"STATES" ":" states+=State[',']
-	"START_STATE" ":" "@"start_state=[State]
-	"CURRENT_STATE" ":" "@"current_state=[State]
-	"END_STATE" ":" "@"end_state=[State]
-	"EVENTS" ":" events+=Event[',']
-	"TRANSITIONS" ":" transitions+=Transition
-	"REACTIONS" ":" reactions+=Reaction
+Model:
+    namespaces*=NamespaceDeclare
+    fsm=FSM
+;
+
+FSM:
+"FSM" "(" "ns" "=" ns=[NamespaceDeclare|FQN] ")"  name=IRI_TRUNK "{"
+    ("DESCRIPTION" ":" description=STRING)?
+    "STATES"      ":" states+=State[","]
+    "START_STATE" ":" "@" start_state=[State]
+    "END_STATE"   ":" "@" end_state=[State]
+    "EVENTS"      ":" events+=Event[","]
+    "TRANSITIONS" ":" transitions+=Transition
+    "REACTIONS"   ":" reactions+=Reaction
+"}"
 ;
 
 State:
-	name=ID
+    name=ID
 ;
 
 Event:
@@ -21,18 +24,24 @@ Event:
 ;
 
 Transition:
-	name=ID ":"
-		"FROM" ":" "@"from_state=[State]
-		"TO" ":" "@"to_state=[State]
+    name=ID ":"
+        "FROM" ":" "@" from_state=[State]
+        "TO"   ":" "@" to_state=[State]
 ;
 
 Reaction:
-	name=ID ":"
-		"WHEN" ":" "@"when=[Event]
-		"DO" ":" "@"do=[Transition]
-		("FIRES" ":" "@"fires=[Event] ("," "@"fires+=[Event])*)?
+    name=ID ":"
+        "WHEN" ":" "@" when=[Event]
+        "DO"   ":" "@" do=[Transition]
+        ("FIRES" ":" fires+=FiredEvent[","])?
 ;
 
-Comment:
-	(/\/\/.*$/ | /(?ms)\/\*(.*?)\*\//)
+FiredEvent:
+    "@" event=[Event]
 ;
+
+FQN: IRI_TRUNK+["."];
+Import: "import" importURI=STRING;
+Comment: /\/\/.*$/;
+NamespaceDeclare: "ns" name=IRI_TRUNK "=" uri=STRING ;
+IRI_TRUNK: /[^\d\W][\w-]*\b/;

@@ -29,10 +29,14 @@ where = ["src"]
 ]
 
 [project.entry-points."textx_languages"]
-"fsm" = "coord_dsl:fsm_meta"
+"fsm" = "coord_dsl.generators.registration:fsm_lang"
 
 [project.entry-points."textx_generators"]
-"fsm_json" = "coord_dsl.generators.fsm_gen:fsm_json_gen"
-"fsm_cpp" = "coord_dsl.generators.fsm_gen:fsm_cpp_gen"
-"fsm_py" = "coord_dsl.generators.fsm_gen:fsm_py_gen"
-"fsm_console" = "coord_dsl.generators.fsm_gen:fsm_console_gen"
+"fsm_graph_console" = "coord_dsl.generators.registration:fsm_console_gen"
+"fsm_graph_file" = "coord_dsl.generators.registration:fsm_file_gen"
+"fsm_cpp" = "coord_dsl.generators.registration:fsm_cpp_gen"
+"fsm_python" = "coord_dsl.generators.registration:fsm_python_gen"
+
+[ruff]
+line-length = 100
+

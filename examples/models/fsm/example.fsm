@@ -1,10 +1,11 @@
-NAME: example
+ns ex = "http://example.org/"
+
+FSM (ns=ex) ex_fsm {
 DESCRIPTION: "Example of a simple FSM"
 
 STATES: S_START,S_CONFIGURE,S_IDLE,S_COMPILE,S_EXECUTE,S_EXIT
 
 START_STATE: @S_START
-CURRENT_STATE: @S_START
 END_STATE: @S_EXIT
 
 EVENTS: E_CONFIGURE_ENTERED,
@@ -69,10 +70,11 @@ REACTIONS:
     R_E_STEP1:
         WHEN: @E_STEP
         DO: @T_START_CONFIGURE
-        FIRES: @E_CONFIGURE_ENTERED
+        FIRES: @E_CONFIGURE_ENTERED,@E_STEP
     R_E_STEP2:
         WHEN: @E_STEP
         DO: @T_IDLE_IDLE
     R_E_STEP3:
         WHEN: @E_STEP
         DO: @T_EXECUTE_EXECUTE
+}

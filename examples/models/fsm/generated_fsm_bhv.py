@@ -14,7 +14,7 @@ from coord_dsl.event_loop import (
     reconfig_event_buffers,
 )
 from coord_dsl.fsm import FSMData, fsm_step
-from fsm_example import EventID, StateID, create_fsm
+from ex_fsm import EventID, StateID, create_fsm
 
 
 LOOP_DURATION = 0.01

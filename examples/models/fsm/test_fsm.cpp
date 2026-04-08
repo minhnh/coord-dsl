@@ -5,28 +5,26 @@
 #include <thread>
 #include "coord2b/functions/event_loop.h"
 #include "coord2b/functions/fsm.h"
-#include "example.fsm.hpp"
+#include "ex_fsm.hpp"
 
 sig_atomic_t stopFlag = 0;
 
-void
-handler(int) {
-    stopFlag = 1;
-}
+void handler(int) { stopFlag = 1; }
 
 
-int main() {
+int main()
+{
     using clock = std::chrono::steady_clock;
 
     signal(SIGINT, &handler);
 
-    constexpr auto tick_period = std::chrono::microseconds(1000);  // 1kHz
+    constexpr auto tick_period  = std::chrono::microseconds(1000); // 1kHz
     constexpr auto print_period = std::chrono::milliseconds(500);  // 2Hz
-    auto next_tick = clock::now();
-    auto now = clock::now();
-    auto next_print = now + print_period;
+    auto           next_tick    = clock::now();
+    auto           now          = clock::now();
+    auto           next_print   = now + print_period;
 
-    auto fsm = create_fsm();
+    auto fsm     = create_fsm();
     bool compile = true;
     while (!stopFlag) {
         next_tick += tick_period;

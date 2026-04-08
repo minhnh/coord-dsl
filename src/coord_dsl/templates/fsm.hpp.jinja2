@@ -77,16 +77,16 @@ enum e_events {
 
 // sm transitions
 enum e_transitions {
-{%- for transition in data.transitions %}
-    {{ transition }}{% if loop.first %} = 0{% endif %},
+{%- for transition in data.transitions_table %}
+    {{ transition.id }}{% if loop.first %} = 0{% endif %},
 {%- endfor %}
     NUM_TRANSITIONS
 };
 
 // sm reactions
 enum e_reactions {
-{%- for reaction in data.reactions %}
-    {{ reaction }}{% if loop.first %} = 0{% endif %},
+{%- for reaction in data.reactions_table %}
+    {{ reaction.id }}{% if loop.first %} = 0{% endif %},
 {%- endfor %}
     NUM_REACTIONS
 };
@@ -100,7 +100,7 @@ inline struct fsm_nbx * create_fsm() {
         .states = nullptr,
         .startStateIndex = {{ data.start_state }},
         .endStateIndex = {{ data.end_state }},
-        .currentStateIndex = {{ data.current_state }},
+        .currentStateIndex = {{ data.start_state }},
         .eventData = nullptr,
         .reactions = nullptr,
         .transitions = nullptr
@@ -116,24 +116,24 @@ inline struct fsm_nbx * create_fsm() {
 
     // sm transition table
     struct transition * transitions = new (std::nothrow) transition[NUM_TRANSITIONS]{
-    {%- for _, transition in data.transitions_table.items() %}
+    {%- for transition in data.transitions_table %}
         {
-            .startStateIndex = {{ transition.from }},
-            .endStateIndex = {{ transition.to }},
+            .startStateIndex = {{ transition.from_state }},
+            .endStateIndex = {{ transition.to_state }},
         }{% if loop.last %} {% else %}, {% endif %}
     {%- endfor %}
     };
 
     // sm reaction table
     struct event_reaction * reactions = new (std::nothrow) event_reaction[NUM_REACTIONS]{
-    {%- for _, reaction in data.reactions_table.items() %}
+    {%- for reaction in data.reactions_table %}
         {
-            .conditionEventIndex = {{ reaction.when }},
-            .transitionIndex = {{ reaction.do }},
+            .conditionEventIndex = {{ reaction.when_event }},
+            .transitionIndex = {{ reaction.do_transition }},
             .numFiredEvents = {{ reaction.num_fires }},
-    {%- if reaction.fires %}
+    {%- if reaction.fires_events %}
             .firedEventIndices = new unsigned int[{{ reaction.num_fires }}]{
-    {%- for event in reaction.fires %}
+    {%- for event in reaction.fires_events %}
                 {{ event }}{% if loop.last %} {% else %}, {% endif %}
     {%- endfor %}
             },

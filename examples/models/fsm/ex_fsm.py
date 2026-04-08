@@ -1,7 +1,7 @@
 """
 This is an auto-generated file. Do not edit it directly.
 
-FSM: example
+FSM: ex_fsm
 FSM Description: Example of a simple FSM
 
 Examples:
@@ -18,7 +18,6 @@ Examples:
 ...     fsm_step(fsm)
 ...     reconfig_event_buffers(fsm.event_data)
 """
-
 from enum import IntEnum, auto
 from coord_dsl.event_loop import EventData
 from coord_dsl.fsm import FSMData, Transition, EventReaction
@@ -76,19 +75,13 @@ def create_fsm() -> FSMData:
     """Creates the FSM data structure."""
     # Transitions
     trans_dict = {
-        TransitionID.T_START_CONFIGURE: Transition(
-            StateID.S_START, StateID.S_CONFIGURE
-        ),
+        TransitionID.T_START_CONFIGURE: Transition(StateID.S_START, StateID.S_CONFIGURE),
         TransitionID.T_CONFIGURE_IDLE: Transition(StateID.S_CONFIGURE, StateID.S_IDLE),
         TransitionID.T_IDLE_IDLE: Transition(StateID.S_IDLE, StateID.S_IDLE),
         TransitionID.T_IDLE_EXECUTE: Transition(StateID.S_IDLE, StateID.S_EXECUTE),
         TransitionID.T_IDLE_COMPILE: Transition(StateID.S_IDLE, StateID.S_COMPILE),
-        TransitionID.T_COMPILE_EXECUTE: Transition(
-            StateID.S_COMPILE, StateID.S_EXECUTE
-        ),
-        TransitionID.T_EXECUTE_EXECUTE: Transition(
-            StateID.S_EXECUTE, StateID.S_EXECUTE
-        ),
+        TransitionID.T_COMPILE_EXECUTE: Transition(StateID.S_COMPILE, StateID.S_EXECUTE),
+        TransitionID.T_EXECUTE_EXECUTE: Transition(StateID.S_EXECUTE, StateID.S_EXECUTE),
         TransitionID.T_EXECUTE_IDLE: Transition(StateID.S_EXECUTE, StateID.S_IDLE),
     }
     trans_list = [trans_dict[i] for i in TransitionID]
@@ -135,6 +128,7 @@ def create_fsm() -> FSMData:
             transition_index=TransitionID.T_START_CONFIGURE,
             fired_event_indices=[
                 EventID.E_CONFIGURE_ENTERED,
+                EventID.E_STEP,
             ],
         ),
         ReactionID.R_E_STEP2: EventReaction(
