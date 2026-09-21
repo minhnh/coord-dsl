@@ -121,6 +121,9 @@ state/event/transition/reaction enums, and the IRI tables below. No control loop
 you own that. Each also writes a ``provenance.ld.json`` beside the artifact,
 recording what produced it.
 
+A tool that calls the generator functions itself records a file the same way,
+with ``record(model, target, path, started)``.
+
 .. _fsm-iri-tables:
 
 Model IRIs in the generated code

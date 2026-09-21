@@ -21,9 +21,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
-      - name: Install rdf-utils (git dependency)
-        run: pip install "rdf_utils @ git+https://github.com/secorolab/rdf-utils.git"
-
       - name: Install package
         run: pip install -e .
 

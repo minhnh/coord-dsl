@@ -3,6 +3,7 @@
 # Author: Vamsi Kalagaturu
 """textX registration and generators for finite-state-machine models."""
 
+from datetime import datetime, timezone
 from importlib.resources import files
 from pathlib import Path
 
@@ -58,6 +59,7 @@ def graph_gen_console(metamodel, model, output_path, overwrite, debug, **kwargs)
 
 def graph_gen_file(metamodel, model, output_path, overwrite, debug, **kwargs):
     del metamodel, overwrite, debug
+    started = datetime.now(timezone.utc)
     g, _ = get_fsm_graph(model)
     format = kwargs.get("format", "json-ld")
     if format not in SUPPORTED_GRAPH_FORMATS:
@@ -77,7 +79,7 @@ def graph_gen_file(metamodel, model, output_path, overwrite, debug, **kwargs):
                 auto_compact="autocompact" in kwargs,
             )
         )
-    record(model, "graph", output_path)
+    record(model, "graph", output_path, started)
     print(f"FSM graph generated at {output_path}")
 
 
@@ -89,6 +91,7 @@ def gen_fsm_dot_console(metamodel, model, output_path, overwrite, debug, **kwarg
 
 def gen_fsm_dot_file(metamodel, model, output_path, overwrite, debug, **kwargs):
     del metamodel, debug
+    started = datetime.now(timezone.utc)
     img_format = kwargs.get("format", "dot")
     if img_format not in ("dot",) + FORMATS:
         raise ValueError(
@@ -103,12 +106,13 @@ def gen_fsm_dot_file(metamodel, model, output_path, overwrite, debug, **kwargs):
         print(f"not overwriting existing file '{output_path}'")
         return
     write_dot(fsm_dot(g, fsm_ref), output_path, img_format)
-    record(model, "dot", output_path)
+    record(model, "dot", output_path, started)
     print(f"FSM graph drawn at {output_path}")
 
 
 def gen_cpp(metamodel, model, output_path, overwrite, debug, **kwargs):
     del metamodel, overwrite, debug, kwargs
+    started = datetime.now(timezone.utc)
     g, fsm_ref = get_fsm_graph(model)
     rendered = gen_cpp_header(gen_json(g, fsm_ref))
     output_path = (
@@ -116,12 +120,13 @@ def gen_cpp(metamodel, model, output_path, overwrite, debug, **kwargs):
     )
     with open(output_path, "w") as f:
         f.write(rendered)
-    record(model, "cpp", output_path)
+    record(model, "cpp", output_path, started)
     print(f"FSM C code generated at {output_path}")
 
 
 def gen_python(metamodel, model, output_path, overwrite, debug, **kwargs):
     del metamodel, overwrite, debug, kwargs
+    started = datetime.now(timezone.utc)
     g, fsm_ref = get_fsm_graph(model)
     rendered = gen_python_code(gen_json(g, fsm_ref))
     output_path = (
@@ -129,7 +134,7 @@ def gen_python(metamodel, model, output_path, overwrite, debug, **kwargs):
     )
     with open(output_path, "w") as f:
         f.write(rendered)
-    record(model, "python", output_path)
+    record(model, "python", output_path, started)
     print(f"FSM Python code generated at {output_path}")
 
 

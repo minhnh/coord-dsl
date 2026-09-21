@@ -1,5 +1,6 @@
 numpy
 rdflib
+rdf_utils @ git+https://github.com/minhnh/rdf-utils.git@83db3ea55091815a68a0d1dc9d9a2dce81db509b
 pyld
 pyshacl
 jinja2
