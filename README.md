@@ -76,7 +76,7 @@ the FSM and each of its parts a stable URI.
 textx generate example.fsm --target cpp -o model.hpp
 textx generate example.fsm --target python -o model.py
 textx generate example.fsm --target graph --format json-ld --autocompact  # writes example_fsm.ld.json beside example.fsm
-textx generate example.fsm --target console --format ttl
+textx generate example.fsm --target console --format trig
 textx generate example.fsm --target dot --format png
 ```
 
@@ -84,17 +84,19 @@ Available targets:
 
 - `cpp`: C++ header for the [coord2b](https://github.com/rosym-project/coord2b) runtime.
 - `python`: Python module for the bundled `coord_dsl` runtime.
-- `graph` / `console`: RDF in JSON-LD, Turtle, or XML.
+- `graph` / `console`: RDF in JSON-LD, N-Quads, or TriG.
 - `dot` / `dot-console`: graphviz source or a PNG, SVG, or PDF rendering.
 
-The RDF generators call `rdflib.Graph.serialize` with `format` from `--format`
-(default: `json-ld`), `indent=2`, and `auto_compact=True` when `--autocompact`
-is present (`False` otherwise). RDFLib derives the compacted JSON-LD context
-from the graph's namespace manager.
+The RDF generators write the FSM graph as one named graph, named by a fresh
+`urn:uuid:`, in the `--format` given: `json-ld` (default, `.ld.json`), `nquads`
+(`.nq`) or `trig` (`.trig`). JSON-LD gets `indent=2`, and `auto_compact=True`
+when `--autocompact` is present (`False` otherwise); RDFLib derives the
+compacted context from the graph's namespace manager.
 
 Generated code includes `FSM_URI` and URI tables for states, events,
-transitions, and reactions. File generators also update a
-`provenance.ld.json` document beside their output.
+transitions, and reactions. File generators also write their provenance to a
+`<output>.prov.ld.json` beside their output, e.g. `model.hpp.prov.ld.json`,
+replaced on each run.
 
 See [examples/models/fsm](examples/models/fsm/) for a complete model and Python
 and C++ controllers.

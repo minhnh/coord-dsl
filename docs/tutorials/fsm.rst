@@ -110,16 +110,20 @@ Generate
    textx generate example.fsm --target graph --format json-ld --autocompact  # writes ex_fsm.ld.json beside example.fsm
    textx generate example.fsm --target dot --format png     # a picture of the machine
 
-The ``graph`` and ``console`` targets call ``rdflib.Graph.serialize`` with
-``format`` from ``--format`` (default: ``json-ld``), ``indent=2``, and
-``auto_compact=True`` when ``--autocompact`` is present (``False`` otherwise).
-RDFLib derives the compacted JSON-LD context from the graph's namespace
-manager.
+The ``graph`` and ``console`` targets write the FSM graph as one named graph,
+named by a fresh ``urn:uuid:``, in the ``--format`` given: ``json-ld`` (default,
+``.ld.json``), ``nquads`` (``.nq``) or ``trig`` (``.trig``). JSON-LD gets
+``indent=2``, and ``auto_compact=True`` when ``--autocompact`` is present
+(``False`` otherwise); RDFLib derives the compacted context from the graph's
+namespace manager.
 
 The code targets emit ``create_fsm()``, ``destroy_fsm()`` (C++), the
 state/event/transition/reaction enums, and the IRI tables below. No control loop —
-you own that. Each also writes a ``provenance.ld.json`` beside the artifact,
-recording what produced it.
+you own that. Each also writes ``<artifact>.prov.ld.json`` beside the artifact, e.g.
+``ex_fsm.hpp.prov.ld.json``, recording what produced it; a re-run replaces it.
+
+A tool that calls the generator functions itself records a file the same way,
+with ``record(model, path, started)``.
 
 .. _fsm-iri-tables:
 

@@ -24,7 +24,7 @@ jobs:
           cache: pip
 
       - name: Install rdf-utils (git dependency)
-        run: pip install "rdf_utils @ git+https://github.com/secorolab/rdf-utils.git"
+        run: pip install "rdf_utils @ git+https://github.com/minhnh/rdf-utils.git"
 
       - name: Install package
         run: pip install -e .

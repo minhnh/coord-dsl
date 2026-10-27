@@ -11,7 +11,8 @@ dependencies = [
     "textX>=4.1.0",
     "textx_ls_core",
     "jinja2",
-    "rdflib",
+    "rdflib>=7.6.0",
+    "rdf_utils",
 ]
 
 [project.optional-dependencies]
