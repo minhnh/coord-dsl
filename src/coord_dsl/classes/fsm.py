@@ -3,6 +3,10 @@
 # Author: Vamsi Kalagaturu
 
 from typing import Optional
+
+from textx import get_location
+from textx.exceptions import TextXSemanticError
+
 from coord_dsl.classes.common import IHasNamespaceDeclare, IInheritNamespace
 from coord_dsl.classes.event_loop import Event, EventLoop, EventRef
 
@@ -52,3 +56,27 @@ class FSM(IHasNamespaceDeclare):
         self.event_loop: EventLoop = event_loop
         self.transitions: list[Transition] = transitions
         self.reactions: list[Reaction] = reactions
+
+        # Reactions are tried in order, so one can hide another of the same start state.
+        first_by_trigger = {}
+        self_transition_by_state = {}
+        for reaction in reactions:
+            from_state = reaction.do.from_state
+            first = first_by_trigger.setdefault((id(from_state), id(reaction.when)), reaction)
+            if first is not reaction:
+                raise TextXSemanticError(
+                    f"state '{from_state.name}' reacts to event '{reaction.when.name}' with "
+                    f"'{first.name}' and '{reaction.name}' -- only the first can fire",
+                    **get_location(reaction),
+                )
+            if from_state is reaction.do.to_state:
+                self_transition_by_state.setdefault(id(from_state), reaction)
+                continue
+            self_transition = self_transition_by_state.get(id(from_state))
+            if self_transition is not None:
+                raise TextXSemanticError(
+                    f"self-transition reaction '{self_transition.name}' is listed before "
+                    f"'{reaction.name}', which leaves '{from_state.name}' -- the self-transition "
+                    "wins whenever both events are set",
+                    **get_location(self_transition),
+                )
