@@ -37,13 +37,14 @@ class CheckReactionsTest(unittest.TestCase):
                 "same event from one start state",
                 "R_1 { when: <events.E1>, do: <T_LEAVE> },"
                 "R_2 { when: <events.E1>, do: <T_OTHER> }",
-                "state 'S_A' reacts to event 'E1' with 'R_1' and 'R_2' -- only the first can fire",
+                "Multiple reactions to event 'E1' from state 'S_A': 'R_1' and 'R_2'; only the "
+                "first can fire",
             ),
             (
                 "self-transition before a reaction leaving its state",
                 "R_1 { when: <events.E1>, do: <T_STAY> },"
                 "R_2 { when: <events.E2>, do: <T_LEAVE> }",
-                "self-transition reaction 'R_1' is listed before 'R_2', which leaves 'S_A'",
+                "Self-transition reaction 'R_1' is listed before 'R_2', which leaves 'S_A'",
             ),
         ]
         for name, reactions, message in cases:

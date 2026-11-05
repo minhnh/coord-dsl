@@ -57,7 +57,7 @@ class FSM(IHasNamespaceDeclare):
         self.transitions: list[Transition] = transitions
         self.reactions: list[Reaction] = reactions
 
-        # Reactions are tried in order, so one can hide another of the same start state.
+        # A reaction listed earlier can stop a later one from the same state from firing.
         first_by_trigger = {}
         self_transition_by_state = {}
         for reaction in reactions:
@@ -65,8 +65,9 @@ class FSM(IHasNamespaceDeclare):
             first = first_by_trigger.setdefault((id(from_state), id(reaction.when)), reaction)
             if first is not reaction:
                 raise TextXSemanticError(
-                    f"state '{from_state.name}' reacts to event '{reaction.when.name}' with "
-                    f"'{first.name}' and '{reaction.name}' -- only the first can fire",
+                    f"Multiple reactions to event '{reaction.when.name}' from state "
+                    f"'{from_state.name}': '{first.name}' and '{reaction.name}'; only the "
+                    "first can fire.",
                     **get_location(reaction),
                 )
             if from_state is reaction.do.to_state:
@@ -75,8 +76,8 @@ class FSM(IHasNamespaceDeclare):
             self_transition = self_transition_by_state.get(id(from_state))
             if self_transition is not None:
                 raise TextXSemanticError(
-                    f"self-transition reaction '{self_transition.name}' is listed before "
-                    f"'{reaction.name}', which leaves '{from_state.name}' -- the self-transition "
-                    "wins whenever both events are set",
+                    f"Self-transition reaction '{self_transition.name}' is listed before "
+                    f"'{reaction.name}', which leaves '{from_state.name}'; the self-transition "
+                    "wins whenever both events are set.",
                     **get_location(self_transition),
                 )
