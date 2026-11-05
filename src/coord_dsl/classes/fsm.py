@@ -68,7 +68,15 @@ class FSM(IHasNamespaceDeclare):
 
         # Ensure the reaction specifications are valid.
         first_by_trigger = {}
+        names = set()
         for reaction in reactions:
+            if reaction.name in names:
+                raise TextXSemanticError(
+                    f"Multiple reactions named '{reaction.name}'. Reaction names must be unique "
+                    "within an FSM.",
+                    **get_location(reaction),
+                )
+            names.add(reaction.name)
             from_state = reaction.do.from_state
             first = first_by_trigger.setdefault((id(from_state), id(reaction.when)), reaction)
             if first is not reaction:
