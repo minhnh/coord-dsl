@@ -2,9 +2,9 @@
 # SPDX-FileCopyrightText: 2026 SECORO AG (secoro.uni-bremen.de)
 # Author: Vamsi Kalagaturu
 
+from rdf_utils.collection import add_node_list_pred
 from rdf_utils.namespace import URL_SECORO_MM
-from rdflib import BNode, Graph, Literal, RDF, URIRef
-from rdflib.collection import Collection
+from rdflib import Graph, Literal, RDF, URIRef
 from rdf_utils.models.vocab import (
     URI_EL_PRED_EVT_LOOP,
     URI_EL_PRED_HAS_EVT_REACT,
@@ -99,8 +99,8 @@ def get_fsm_graph(model) -> tuple[Graph, URIRef]:
             )
 
     # A list, as triples have no order and the order of the reactions is their firing priority.
-    reactions = BNode()
-    Collection(graph, reactions, [reaction.uri for reaction in fsm.reactions])
-    graph.add((fsm.uri, URI_FSM_PRED_REACTIONS, reactions))
+    add_node_list_pred(
+        graph, fsm.uri, URI_FSM_PRED_REACTIONS, [reaction.uri for reaction in fsm.reactions]
+    )
 
     return graph, fsm.uri

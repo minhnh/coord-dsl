@@ -7,8 +7,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from rdflib.collection import Collection
 from rdflib.namespace import split_uri
+from rdf_utils.collection import load_list_re
 from rdf_utils.models.vocab import URI_EL_PRED_REF_EVT
 
 from coord_dsl.rdf.vocab import (
@@ -82,7 +82,7 @@ def _fsm_body(g, fsm_ref, indent, entry=True, awaited=(), colour=None):
         lines.append(f'{indent}"{_esc(state)}" [{", ".join(attrs)}];')
 
     reacted = set()
-    for reaction in sorted(Collection(g, g.value(fsm_ref, URI_FSM_PRED_REACTIONS)), key=str):
+    for reaction in sorted(load_list_re(g, g.value(fsm_ref, URI_FSM_PRED_REACTIONS)), key=str):
         transition = g.value(reaction, URI_FSM_PRED_DO_TRANSITION)
         reacted.add(transition)
         label = [_local(g.value(reaction, URI_EL_PRED_REF_EVT))]
