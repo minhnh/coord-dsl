@@ -44,7 +44,8 @@ class CheckReactionsTest(unittest.TestCase):
                 "self-transition before a reaction leaving its state",
                 "R_1 { when: <events.E1>, do: <T_STAY> },"
                 "R_2 { when: <events.E2>, do: <T_LEAVE> }",
-                "Self-transition reaction 'R_1' is listed before 'R_2', which leaves 'S_A'",
+                "Self-transition reaction 'R_1' is listed before reaction 'R_2', which leaves "
+                "state 'S_A'",
             ),
         ]
         for name, reactions, message in cases:
