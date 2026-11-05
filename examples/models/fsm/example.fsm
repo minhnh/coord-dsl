@@ -34,11 +34,9 @@ fsm (ns=ex) ex_fsm {
     transitions {
         T_START_CONFIGURE { from: <S_START>,     to: <S-CONFIGURE> },
         T_CONFIGURE_IDLE  { from: <S-CONFIGURE>, to: <S_IDLE> },
-        T_IDLE_IDLE       { from: <S_IDLE>,      to: <S_IDLE> },
         T_IDLE_EXECUTE    { from: <S_IDLE>,      to: <S_EXECUTE> },
         T_IDLE_COMPILE    { from: <S_IDLE>,      to: <S-COMPILE> },
         T_COMPILE_EXECUTE { from: <S-COMPILE>,   to: <S_EXECUTE> },
-        T_EXECUTE_EXECUTE { from: <S_EXECUTE>,   to: <S_EXECUTE> },
         T_EXECUTE_IDLE    { from: <S_EXECUTE>,   to: <S_IDLE> },
         T_IDLE_EXIT       { from: <S_IDLE>,      to: <S_EXIT> }
     }
@@ -75,8 +73,6 @@ fsm (ns=ex) ex_fsm {
             when: <el.e-step>,
             do:   <T_START_CONFIGURE>,
             fires { <el.E-CONFIGURE-ENTERED>, <el.e-step> }
-        },
-        R_E_STEP2 { when: <el.e-step>, do: <T_IDLE_IDLE> },
-        R_E_STEP3 { when: <el.e-step>, do: <T_EXECUTE_EXECUTE> }
+        }
     }
 }

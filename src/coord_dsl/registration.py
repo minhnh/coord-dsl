@@ -6,7 +6,8 @@
 from importlib.resources import files
 from pathlib import Path
 
-from textx import GeneratorDesc, LanguageDesc, metamodel_from_file
+from textx import GeneratorDesc, LanguageDesc, get_location, metamodel_from_file
+from textx.exceptions import TextXSemanticError
 from textx.scoping import providers as scoping_providers
 
 from coord_dsl.classes.event_loop import Event, EventLoop, EventRef
@@ -21,12 +22,45 @@ GRAMMAR_PATH = str(files("coord_dsl.metamodels").joinpath("fsm.tx"))
 SUPPORTED_GRAPH_FORMATS = {"ttl": "ttl", "xml": "xml", "json-ld": "ld.json"}
 
 
+def check_reactions(model, metamodel):
+    """Reject reactions whose order hides another reaction of the same start state.
+
+    Two reactions to one event from one start state: only the first can fire.
+    A self-transition reaction listed before a reaction leaving its state: the
+    self-transition wins whenever both events are set, so the state is not left.
+    """
+    del metamodel
+    first_by_trigger = {}
+    self_transition_by_state = {}
+    for reaction in model.fsm.reactions:
+        from_state = reaction.do.from_state
+        first = first_by_trigger.setdefault((id(from_state), id(reaction.when)), reaction)
+        if first is not reaction:
+            raise TextXSemanticError(
+                f"state '{from_state.name}' reacts to event '{reaction.when.name}' with "
+                f"'{first.name}' and '{reaction.name}' -- only the first can fire",
+                **get_location(reaction),
+            )
+        if from_state is reaction.do.to_state:
+            self_transition_by_state.setdefault(id(from_state), reaction)
+            continue
+        self_transition = self_transition_by_state.get(id(from_state))
+        if self_transition is not None:
+            raise TextXSemanticError(
+                f"self-transition reaction '{self_transition.name}' is listed before "
+                f"'{reaction.name}', which leaves '{from_state.name}' -- the self-transition "
+                "wins whenever both events are set",
+                **get_location(self_transition),
+            )
+
+
 def fsm_metamodel():
     mm = metamodel_from_file(
         GRAMMAR_PATH,
         classes=[EventLoop, Event, EventRef, State, Transition, Reaction, FSM],
     )
     mm.register_scope_providers({"*.*": scoping_providers.FQNImportURI()})
+    mm.register_model_processor(check_reactions)
     return mm
 
 
