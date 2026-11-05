@@ -17,7 +17,6 @@ fsm (ns=ex) machine {
     start: <S_A>
     end: <S_C>
     transitions {
-        T_STAY { from: <S_A>, to: <S_A> },
         T_LEAVE { from: <S_A>, to: <S_B> },
         T_OTHER { from: <S_A>, to: <S_C> },
         T_END { from: <S_B>, to: <S_C> }
@@ -31,45 +30,36 @@ MODEL_END = """
 
 
 class CheckReactionsTest(unittest.TestCase):
-    def test_rejects_reactions_hidden_by_their_order(self):
-        cases = [
-            (
-                "same event from one start state",
-                "R_1 { when: <events.E1>, do: <T_LEAVE> },"
-                "R_2 { when: <events.E1>, do: <T_OTHER> }",
-                "Multiple reactions to event 'E1' from state 'S_A': 'R_1' and 'R_2'; only the "
-                "first can fire",
-            ),
-            (
-                "self-transition before a reaction leaving its state",
-                "R_1 { when: <events.E1>, do: <T_STAY> },"
-                "R_2 { when: <events.E2>, do: <T_LEAVE> }",
-                "Self-transition reaction 'R_1' is listed before reaction 'R_2', which leaves "
-                "state 'S_A'",
-            ),
-        ]
-        for name, reactions, message in cases:
-            with self.subTest(name):
-                with self.assertRaisesRegex(TextXSemanticError, message):
-                    fsm_metamodel().model_from_str(MODEL_START + reactions + MODEL_END)
+    def test_rejects_multiple_reactions_to_one_event_from_one_state(self):
+        reactions = (
+            "R_1 { when: <events.E1>, do: <T_LEAVE> },"
+            "R_2 { when: <events.E1>, do: <T_OTHER> }"
+        )
+        with self.assertRaisesRegex(
+            TextXSemanticError,
+            "Multiple reactions to event 'E1' from state 'S_A': 'R_1' and 'R_2'; only the "
+            "first can fire",
+        ):
+            fsm_metamodel().model_from_str(MODEL_START + reactions + MODEL_END)
 
-    def test_accepts_reactions_that_can_all_fire(self):
-        cases = [
-            (
-                "self-transition after a reaction leaving its state",
-                "R_1 { when: <events.E2>, do: <T_LEAVE> },"
-                "R_2 { when: <events.E1>, do: <T_STAY> }",
-            ),
-            (
-                "same event from different start states",
-                "R_1 { when: <events.E1>, do: <T_LEAVE> },"
-                "R_2 { when: <events.E1>, do: <T_END> }",
-            ),
-        ]
-        for name, reactions in cases:
-            with self.subTest(name):
-                model = fsm_metamodel().model_from_str(MODEL_START + reactions + MODEL_END)
-                self.assertEqual([r.name for r in model.fsm.reactions], ["R_1", "R_2"])
+    def test_accepts_one_event_from_different_states(self):
+        reactions = (
+            "R_1 { when: <events.E1>, do: <T_LEAVE> },"
+            "R_2 { when: <events.E1>, do: <T_END> }"
+        )
+        model = fsm_metamodel().model_from_str(MODEL_START + reactions + MODEL_END)
+        self.assertEqual([r.name for r in model.fsm.reactions], ["R_1", "R_2"])
+
+    def test_rejects_a_transition_from_a_state_to_itself(self):
+        model = MODEL_START.replace(
+            "T_LEAVE { from: <S_A>, to: <S_B> }", "T_STAY { from: <S_A>, to: <S_A> }"
+        )
+        with self.assertRaisesRegex(
+            TextXSemanticError, "Transition 'T_STAY' goes from state 'S_A' to itself"
+        ):
+            fsm_metamodel().model_from_str(
+                model + "R_1 { when: <events.E1>, do: <T_END> }" + MODEL_END
+            )
 
 
 if __name__ == "__main__":

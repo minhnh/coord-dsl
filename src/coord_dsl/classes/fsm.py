@@ -57,9 +57,17 @@ class FSM(IHasNamespaceDeclare):
         self.transitions: list[Transition] = transitions
         self.reactions: list[Reaction] = reactions
 
+        for transition in transitions:
+            if transition.from_state is transition.to_state:
+                raise TextXSemanticError(
+                    f"Transition '{transition.name}' goes from state "
+                    f"'{transition.from_state.name}' to itself. Self-transitions are not needed, "
+                    "as the state does not change when no reaction fires.",
+                    **get_location(transition),
+                )
+
         # Ensure the reaction specifications are valid.
         first_by_trigger = {}
-        self_transition_by_state = {}
         for reaction in reactions:
             from_state = reaction.do.from_state
             first = first_by_trigger.setdefault((id(from_state), id(reaction.when)), reaction)
@@ -69,16 +77,4 @@ class FSM(IHasNamespaceDeclare):
                     f"'{from_state.name}': '{first.name}' and '{reaction.name}'; only the "
                     "first can fire.",
                     **get_location(reaction),
-                )
-            if from_state is reaction.do.to_state:
-                self_transition_by_state.setdefault(id(from_state), reaction)
-                continue
-            self_transition = self_transition_by_state.get(id(from_state))
-            if self_transition is not None:
-                raise TextXSemanticError(
-                    f"Self-transition reaction '{self_transition.name}' is listed before reaction "
-                    f"'{reaction.name}', which leaves state '{from_state.name}'. If both reactions "
-                    "are triggered at the same time, the self-transition takes priority and the "
-                    "state remains unchanged.",
-                    **get_location(self_transition),
                 )
