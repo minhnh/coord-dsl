@@ -94,9 +94,12 @@ when `--autocompact` is present (`False` otherwise); RDFLib derives the
 compacted context from the graph's namespace manager.
 
 Generated code includes `FSM_URI` and URI tables for states, events,
-transitions, and reactions. File generators also write their provenance to a
-`<output>.prov.ld.json` beside their output, e.g. `model.hpp.prov.ld.json`,
-replaced on each run.
+transitions, and reactions.
+
+The `cpp` and `python` targets generate from the FSM graph in memory and write
+only the code. With `--provenance`, both steps are also recorded in one PROV
+bundle, written to `<output>.prov.ld.json`. The `graph` target takes the flag too
+and writes `<fsm>.prov.ld.json`.
 
 See [examples/models/fsm](examples/models/fsm/) for a complete model and Python
 and C++ controllers.

@@ -119,11 +119,19 @@ namespace manager.
 
 The code targets emit ``create_fsm()``, ``destroy_fsm()`` (C++), the
 state/event/transition/reaction enums, and the IRI tables below. No control loop —
-you own that. Each also writes ``<artifact>.prov.ld.json`` beside the artifact, e.g.
-``ex_fsm.hpp.prov.ld.json``, recording what produced it; a re-run replaces it.
+you own that.
 
-A tool that calls the generator functions itself records a file the same way,
-with ``record(model, path, started)``.
+They generate from the FSM graph in memory and write only the code. With
+``--provenance``, both steps are also recorded in one PROV bundle, written to e.g.
+``ex_fsm.hpp.prov.ld.json``.
+
+A tool calls the same steps from ``coord_dsl.rdf.provenance``,
+``build(model, bundle, graph_file)``, with the file optional, and
+``render(fsm_graph, bundle, target, output_file)``. Each adds itself to the given bundle,
+which the tool creates with rdf-utils ``create_bundle`` for the package and fills with
+``load_pkg_prov``. ``build`` returns the graph and ``render`` the written file. The
+tool keeps that bundle unchanged. It records its own steps in a bundle of its own, including
+that coord-dsl acted on its behalf.
 
 .. _fsm-iri-tables:
 
