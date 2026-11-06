@@ -8,6 +8,7 @@ from rdf_utils.namespace import URL_SECORO_MM
 NS_MM_FSM = Namespace(f"{URL_SECORO_MM}/behaviour/fsm#")
 
 URI_FSM_TYPE_FSM = NS_MM_FSM["FiniteStateMachine"]
+URI_FSM_TYPE_ORDERED_REACTIONS = NS_MM_FSM["OrderedReactions"]
 URI_FSM_TYPE_STATE = NS_MM_FSM["State"]
 URI_FSM_TYPE_TRANSITION = NS_MM_FSM["Transition"]
 URI_FSM_TYPE_REACTION = NS_MM_FSM["Reaction"]

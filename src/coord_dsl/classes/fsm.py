@@ -3,6 +3,10 @@
 # Author: Vamsi Kalagaturu
 
 from typing import Optional
+
+from textx import get_location
+from textx.exceptions import TextXSemanticError
+
 from coord_dsl.classes.common import IHasNamespaceDeclare, IInheritNamespace
 from coord_dsl.classes.event_loop import Event, EventLoop, EventRef
 
@@ -52,3 +56,33 @@ class FSM(IHasNamespaceDeclare):
         self.event_loop: EventLoop = event_loop
         self.transitions: list[Transition] = transitions
         self.reactions: list[Reaction] = reactions
+
+        for transition in transitions:
+            if transition.from_state is transition.to_state:
+                raise TextXSemanticError(
+                    f"Transition '{transition.name}' goes from state "
+                    f"'{transition.from_state.name}' to itself. Self-transitions are not needed, "
+                    "as the state does not change when no reaction fires.",
+                    **get_location(transition),
+                )
+
+        # Ensure the reaction specifications are valid.
+        first_by_trigger = {}
+        names = set()
+        for reaction in reactions:
+            if reaction.name in names:
+                raise TextXSemanticError(
+                    f"Multiple reactions named '{reaction.name}'. Reaction names must be unique "
+                    "within an FSM.",
+                    **get_location(reaction),
+                )
+            names.add(reaction.name)
+            from_state = reaction.do.from_state
+            first = first_by_trigger.setdefault((id(from_state), id(reaction.when)), reaction)
+            if first is not reaction:
+                raise TextXSemanticError(
+                    f"Multiple reactions to event '{reaction.when.name}' from state "
+                    f"'{from_state.name}': '{first.name}' and '{reaction.name}'; only the "
+                    "first can fire.",
+                    **get_location(reaction),
+                )
