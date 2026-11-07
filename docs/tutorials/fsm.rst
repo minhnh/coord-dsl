@@ -110,16 +110,30 @@ Generate
    textx generate example.fsm --target graph --format json-ld --autocompact  # writes ex_fsm.ld.json beside example.fsm
    textx generate example.fsm --target dot --format png     # a picture of the machine
 
-The ``graph`` and ``console`` targets call ``rdflib.Graph.serialize`` with
-``format`` from ``--format`` (default: ``json-ld``), ``indent=2``, and
-``auto_compact=True`` when ``--autocompact`` is present (``False`` otherwise).
-RDFLib derives the compacted JSON-LD context from the graph's namespace
-manager.
+The ``graph`` and ``console`` targets write the FSM graph as one named graph,
+named by a fresh ``urn:uuid:``, in the ``--format`` given: ``json-ld`` (default,
+``.ld.json``), ``nquads`` (``.nq``) or ``trig`` (``.trig``). JSON-LD gets
+``indent=2``, and ``auto_compact=True`` when ``--autocompact`` is present
+(``False`` otherwise); RDFLib derives the compacted context from the graph's
+namespace manager.
 
 The code targets emit ``create_fsm()``, ``destroy_fsm()`` (C++), the
 state/event/transition/reaction enums, and the IRI tables below. No control loop —
-you own that. Each also writes a ``provenance.ld.json`` beside the artifact,
-recording what produced it.
+you own that.
+
+They generate from the FSM graph in memory and write only the code. With
+``--provenance``, both steps are also recorded in one PROV bundle, written with the FSM
+graph to e.g. ``ex_fsm.hpp.ld.json``, or in the ``--format`` given.
+
+A tool calls the same steps from ``coord_dsl.rdf.provenance`` on a ``Dataset`` it owns.
+``create_coord_dsl_bundle(dataset)`` creates a bundle there stating the coord_dsl package
+and returns the IDs of the bundle and the package, which
+``build(model, dataset, bundle_id, agent_id, graph_id=None)`` and
+``render(dataset, graph_id, bundle_id, agent_id, target, output_file)`` take. ``build``
+returns the ID of the FSM graph, new when not given, and ``render`` writes the code.
+Neither writes the dataset. The tool keeps coord-dsl's bundle unchanged.
+It records its own steps in a bundle of its own, including that coord-dsl acted on its
+behalf.
 
 .. _fsm-iri-tables:
 

@@ -143,8 +143,8 @@ def gen_cpp_header(ir: dict):
 
     # get module path
     module_path = Path(__file__).parent.parent
-    env = Environment(loader=FileSystemLoader(module_path / "templates"))
-    template = env.get_template("fsm.hpp.jinja2")
+    env = Environment(loader=FileSystemLoader(module_path))
+    template = env.get_template(RENDERERS["cpp"][1])
 
     output = template.render(
         {
@@ -162,8 +162,8 @@ def gen_python_code(ir: dict):
 
     # get module path
     module_path = Path(__file__).parent.parent
-    env = Environment(loader=FileSystemLoader(module_path / "templates"))
-    template = env.get_template("fsm.py.jinja2")
+    env = Environment(loader=FileSystemLoader(module_path))
+    template = env.get_template(RENDERERS["python"][1])
 
     output = template.render(
         {
@@ -172,3 +172,9 @@ def gen_python_code(ir: dict):
     )
 
     return output
+
+
+RENDERERS = {
+    "cpp": (gen_cpp_header, "templates/fsm.hpp.jinja2"),
+    "python": (gen_python_code, "templates/fsm.py.jinja2"),
+}

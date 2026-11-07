@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2026 SECORO AG (secoro.uni-bremen.de)
 # Author: Vamsi Kalagaturu
 
+from uuid import uuid4
+
 from rdf_utils.collection import add_node_list_pred
 from rdf_utils.namespace import URL_SECORO_MM
 from rdflib import Graph, Literal, RDF, URIRef
@@ -39,11 +41,12 @@ from coord_dsl.rdf.vocab import (
 URL_FSM_SHACL = f"{URL_SECORO_MM}/behaviour/fsm.shacl.ttl"
 
 
-def get_fsm_graph(model) -> tuple[Graph, URIRef]:
+def get_fsm_graph(model, graph: Graph | None = None) -> tuple[Graph, URIRef]:
     fsm = getattr(model, "fsm", None)
     assert isinstance(fsm, FSM), "Model does not contain an FSM definition"
 
-    graph = Graph()
+    if graph is None:
+        graph = Graph(identifier=URIRef(uuid4().urn))
     add_event_loop(graph=graph, event_loop=fsm.event_loop)
     graph.bind("fsm", NS_MM_FSM)
     graph.bind(fsm.ns_prefix, fsm.namespace)

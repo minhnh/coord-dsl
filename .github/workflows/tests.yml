@@ -14,17 +14,17 @@ jobs:
       matrix:
         python-version: ["3.12", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
 
       - name: Install rdf-utils (git dependency)
-        run: pip install "rdf_utils @ git+https://github.com/secorolab/rdf-utils.git"
+        run: pip install "rdf_utils @ git+https://github.com/minhnh/rdf-utils.git"
 
       - name: Install package
         run: pip install -e .
