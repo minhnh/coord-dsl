@@ -33,14 +33,9 @@ from rdf_utils.models.time import add_wall_instant
 from rdflib import RDF, Dataset, Graph, Literal, URIRef
 from rdflib.namespace import SDO
 
-from coord_dsl.generators.fsm import gen_cpp_header, gen_json, gen_python_code
+from coord_dsl.generators.fsm import RENDERERS, gen_json
 from coord_dsl.rdf.fsm import get_fsm_graph
 from coord_dsl.rdf.vocab import URI_FSM_TYPE_FSM
-
-RENDERERS = {
-    "cpp": (gen_cpp_header, "templates/fsm.hpp.jinja2"),
-    "python": (gen_python_code, "templates/fsm.py.jinja2"),
-}
 
 
 def create_coord_dsl_bundle(dataset: Dataset) -> tuple[URIRef, URIRef]:

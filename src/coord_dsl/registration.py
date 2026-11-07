@@ -15,14 +15,9 @@ from textx.scoping import providers as scoping_providers
 from coord_dsl.classes.event_loop import Event, EventLoop, EventRef
 from coord_dsl.classes.fsm import FSM, Reaction, State, Transition
 from coord_dsl.generators.dot import FORMATS, fsm_dot, write_dot
-from coord_dsl.generators.fsm import gen_json
+from coord_dsl.generators.fsm import RENDERERS, gen_json
 from coord_dsl.rdf.fsm import get_fsm_graph
-from coord_dsl.rdf.provenance import (
-    RENDERERS,
-    build,
-    create_coord_dsl_bundle,
-    render,
-)
+from coord_dsl.rdf.provenance import build, create_coord_dsl_bundle, render
 
 GRAMMAR_PATH = str(files("coord_dsl.metamodels").joinpath("fsm.tx"))
 
