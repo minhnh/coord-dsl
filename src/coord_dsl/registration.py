@@ -20,6 +20,7 @@ from coord_dsl.rdf.fsm import get_fsm_graph
 from coord_dsl.rdf.provenance import (
     RENDERERS,
     build,
+    create_coord_dsl_bundle,
     render,
 )
 
@@ -65,7 +66,7 @@ def graph_gen_file(metamodel, model, output_path, overwrite, debug, **kwargs):
         )
     dataset = Dataset()
     if "provenance" in kwargs:
-        build(model, dataset)
+        build(model, dataset, *create_coord_dsl_bundle(dataset))
     else:
         get_fsm_graph(model, dataset.graph(URIRef(uuid4().urn)))
     Path(output_path).write_text(
@@ -110,8 +111,9 @@ def gen_code(model, output_path, target, suffix, **kwargs):
         return output_path
     dataset_format = DatasetFormat(kwargs.get("format", DatasetFormat.JSON_LD))
     dataset = Dataset()
-    graph_id, bundle_id = build(model, dataset)
-    render(dataset, graph_id, target, output_path, bundle_id)
+    bundle_id, agent_id = create_coord_dsl_bundle(dataset)
+    graph_id = build(model, dataset, bundle_id, agent_id)
+    render(dataset, graph_id, bundle_id, agent_id, target, output_path)
     Path(f"{output_path}.{dataset_format.extension}").write_text(
         dataset.serialize(format=dataset_format, indent=2, auto_compact="autocompact" in kwargs)
     )

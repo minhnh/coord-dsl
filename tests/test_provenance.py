@@ -16,7 +16,7 @@ from rdflib import Dataset, Literal, URIRef
 from rdflib.namespace import DCTERMS, PROV, RDF, SDO, TIME
 
 from coord_dsl.generators.fsm import gen_json
-from coord_dsl.rdf.provenance import build, render
+from coord_dsl.rdf.provenance import build, create_coord_dsl_bundle, render
 from coord_dsl.rdf.vocab import URI_FSM_TYPE_FSM
 from coord_dsl.registration import fsm_metamodel, gen_python, graph_gen_file
 
@@ -32,11 +32,11 @@ class ProvenanceTest(unittest.TestCase):
         temporary = TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.directory = Path(temporary.name).resolve()
-        self.agent = get_pkg_info("coord_dsl")[0]
         self.dataset = Dataset()
 
     def test_build_records_the_graph_generated_from_the_model(self):
-        graph_id, bundle_id = build(self.model, self.dataset)
+        bundle_id, agent_id = create_coord_dsl_bundle(self.dataset)
+        graph_id = build(self.model, self.dataset, bundle_id, agent_id)
         bundle = self.dataset.graph(bundle_id)
 
         (activity,) = bundle.subjects(RDF.type, URI_PROV_EXT_TYPE_TRANSFORMATION)
@@ -46,9 +46,10 @@ class ProvenanceTest(unittest.TestCase):
         self.assertIn((None, RDF.type, URI_FSM_TYPE_FSM), self.dataset.graph(graph_id))
         self.assertIsNotNone(bundle.value(source, DCTERMS.identifier))
         self.assertEqual(resolve_location(bundle, source), URIRef(MODEL.as_uri()))
-        self.assertIn((activity, PROV.wasAssociatedWith, self.agent), bundle)
-        self.assertIn((None, PROV.wasAttributedTo, self.agent), bundle)
-        self.assertEqual(str(bundle.value(self.agent, SDO.name)), "coord_dsl")
+        self.assertEqual(agent_id, get_pkg_info("coord_dsl")[0])
+        self.assertIn((activity, PROV.wasAssociatedWith, agent_id), bundle)
+        self.assertIn((bundle_id, PROV.wasAttributedTo, agent_id), bundle)
+        self.assertEqual(str(bundle.value(agent_id, SDO.name)), "coord_dsl")
         self.assertIsNotNone(bundle.value(activity, TIME.hasBeginning))
         self.assertIsNotNone(bundle.value(activity, TIME.hasEnd))
         commit, _, _, dirty = get_git_info(MODEL)
@@ -59,9 +60,11 @@ class ProvenanceTest(unittest.TestCase):
         check_shacl_constraints(bundle, SHAPES)
 
     def test_render_uses_the_graph_and_the_template(self):
-        graph_id, _ = build(self.model, self.dataset)
+        graph_id = build(self.model, self.dataset, *create_coord_dsl_bundle(self.dataset))
         output_file = self.directory / "ex_fsm.hpp"
-        bundle = self.dataset.graph(render(self.dataset, graph_id, "cpp", output_file))
+        bundle_id, agent_id = create_coord_dsl_bundle(self.dataset)
+        render(self.dataset, graph_id, bundle_id, agent_id, "cpp", output_file)
+        bundle = self.dataset.graph(bundle_id)
 
         template = Path(str(files("coord_dsl").joinpath("templates/fsm.hpp.jinja2")))
         (activity,) = bundle.subjects(RDF.type, URI_PROV_EXT_TYPE_TRANSFORMATION)

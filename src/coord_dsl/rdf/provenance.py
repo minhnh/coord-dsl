@@ -5,9 +5,9 @@
 
 ``build`` turns a model into an FSM graph, and ``render`` turns that graph and a template into
 code. Both work in one ``Dataset``: the FSM graph and the ``prov:Bundle`` are named graphs in it,
-and each step adds itself to the bundle as a ``prov-ext:Transformation``, attributed to the
-package. Without a bundle, a step creates one for the package. Files are named by their location,
-with the hash of their bytes as ``dcterms:identifier``. Neither step writes the dataset.
+and each step adds itself to the bundle as a ``prov-ext:Transformation`` associated with the
+package, which the caller states in the bundle first. Files are named by their location, with the
+hash of their bytes as ``dcterms:identifier``. Neither step writes the dataset.
 
 The package, named by its purl, is the agent, though PROV-DM 2.2.1.1 defines a software agent as
 running software.
@@ -31,7 +31,7 @@ from rdf_utils.models.prov import (
 )
 from rdf_utils.models.time import add_wall_instant
 from rdflib import RDF, Dataset, Graph, Literal, URIRef
-from rdflib.namespace import PROV, SDO
+from rdflib.namespace import SDO
 
 from coord_dsl.generators.fsm import gen_cpp_header, gen_json, gen_python_code
 from coord_dsl.rdf.fsm import get_fsm_graph
@@ -43,34 +43,30 @@ RENDERERS = {
 }
 
 
-def _bundle(dataset: Dataset, bundle_id: URIRef | None) -> Graph:
-    """The bundle to record in: BUNDLE_ID's, or a new one for the package when it is None."""
-    if bundle_id is None:
-        agent, version, revision, repository, dirty = get_pkg_info("coord_dsl")
-        bundle_id = create_bundle(dataset, agent)
-        load_pkg_prov(
-            dataset.graph(bundle_id),
-            agent,
-            "coord_dsl",
-            version,
-            revision,
-            repository,
-            dirty=dirty,
-        )
-    return dataset.graph(bundle_id)
+def create_coord_dsl_bundle(dataset: Dataset) -> tuple[URIRef, URIRef]:
+    """Create a bundle for coord_dsl in a dataset, stating the package as its agent.
+
+    Returns:
+        The IDs of the bundle and of the package, to pass to `build` and `render`
+    """
+    purl, version, revision, repository, dirty = get_pkg_info("coord_dsl")
+    bundle_id = create_bundle(dataset, purl)
+    load_pkg_prov(
+        dataset.graph(bundle_id), purl, "coord_dsl", version, revision, repository, dirty=dirty
+    )
+    return bundle_id, purl
 
 
 def _add_transformation(
     bundle: Graph,
+    agent: URIRef,
     activity: URIRef,
     sources: list[URIRef],
     targets: list[URIRef],
     started_at: datetime,
     ended_at: datetime,
 ) -> None:
-    """Add a transformation by the package to a bundle, with its wall-clock instants."""
-    agent = bundle.value(bundle.identifier, PROV.wasAttributedTo)
-    assert isinstance(agent, URIRef)
+    """Add a transformation by an agent to a bundle, with its wall-clock instants."""
     beginning, end = URIRef(uuid4().urn), URIRef(uuid4().urn)
     add_wall_instant(bundle, beginning, started_at)
     add_wall_instant(bundle, end, ended_at)
@@ -80,22 +76,24 @@ def _add_transformation(
 def build(
     model,
     dataset: Dataset,
+    bundle_id: URIRef,
+    agent_id: URIRef,
     graph_id: URIRef | None = None,
-    bundle_id: URIRef | None = None,
-) -> tuple[URIRef, URIRef]:
+) -> URIRef:
     """Build the FSM graph of a model in a dataset and add how it was made to a bundle.
 
     Parameters:
         model: the textX model, loaded from a file; that file is the source
         dataset: the dataset holding the FSM graph and the bundle
+        bundle_id: the `prov:Bundle` in the dataset to record in
+        agent_id: the coord_dsl package, stated in the bundle with `load_pkg_prov`
         graph_id: the FSM graph to build into; a new `urn:uuid:` when None
-        bundle_id: the `prov:Bundle` to record in; a new one for the package when None
 
     Returns:
-        The IRIs of the FSM graph and the bundle
+        The IRI of the FSM graph
     """
     graph_id = URIRef(uuid4().urn) if graph_id is None else graph_id
-    bundle = _bundle(dataset, bundle_id)
+    bundle = dataset.graph(bundle_id)
     started_at = datetime.now(UTC)
     source = Path(model._tx_filename).resolve()
     get_fsm_graph(model, dataset.graph(graph_id))
@@ -109,43 +107,42 @@ def build(
     if repository is not None:
         bundle.add((source_id, SDO.codeRepository, URIRef(repository)))
     activity = URIRef(uuid4().urn)
-    _add_transformation(bundle, activity, [source_id], [graph_id], started_at, ended_at)
-    assert isinstance(bundle.identifier, URIRef)
-    return graph_id, bundle.identifier
+    _add_transformation(
+        bundle, agent_id, activity, [source_id], [graph_id], started_at, ended_at
+    )
+    return graph_id
 
 
 def render(
     dataset: Dataset,
     graph_id: URIRef,
+    bundle_id: URIRef,
+    agent_id: URIRef,
     target: str,
     output_file: Path,
-    bundle_id: URIRef | None = None,
-) -> URIRef:
+) -> None:
     """Render an FSM graph in a dataset to code and add how it was made to a bundle.
 
     Parameters:
         dataset: the dataset holding the FSM graph and the bundle
         graph_id: the FSM graph to render, e.g. from `build`
+        bundle_id: the `prov:Bundle` in the dataset to record in
+        agent_id: the coord_dsl package, stated in the bundle with `load_pkg_prov`; its
+            template is found under it
         target: what to render, a key of `RENDERERS`
         output_file: the file to write the code to
-        bundle_id: the `prov:Bundle` to record in; a new one for the package when None
-
-    Returns:
-        The IRI of the bundle
 
     Raises:
         FileNotFoundError: when the template is missing; nothing is written
     """
     fsm_graph = dataset.graph(graph_id)
-    bundle = _bundle(dataset, bundle_id)
+    bundle = dataset.graph(bundle_id)
     started_at = datetime.now(UTC)
     renderer, template_path = RENDERERS[target]
     output_file = Path(output_file).resolve()
     fsm_ref = fsm_graph.value(predicate=RDF.type, object=URI_FSM_TYPE_FSM)
     assert isinstance(fsm_ref, URIRef)
-    agent = bundle.value(bundle.identifier, PROV.wasAttributedTo)
-    assert isinstance(agent, URIRef)
-    template_id = add_file_entity(bundle, agent, template_path)
+    template_id = add_file_entity(bundle, agent_id, template_path)
     try:
         add_file_hash(bundle, template_id)
         code = renderer(gen_json(fsm_graph, fsm_ref))
@@ -166,7 +163,5 @@ def render(
     )
     add_file_hash(bundle, output_id)
     _add_transformation(
-        bundle, activity, [graph_id, template_id], [output_id], started_at, ended_at
+        bundle, agent_id, activity, [graph_id, template_id], [output_id], started_at, ended_at
     )
-    assert isinstance(bundle.identifier, URIRef)
-    return bundle.identifier
