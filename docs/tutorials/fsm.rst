@@ -122,16 +122,16 @@ state/event/transition/reaction enums, and the IRI tables below. No control loop
 you own that.
 
 They generate from the FSM graph in memory and write only the code. With
-``--provenance``, both steps are also recorded in one PROV bundle, written to e.g.
-``ex_fsm.hpp.prov.ld.json``.
+``--provenance``, both steps are also recorded in one PROV bundle, written with the FSM
+graph to e.g. ``ex_fsm.hpp.ld.json``, or in the ``--format`` given.
 
-A tool calls the same steps from ``coord_dsl.rdf.provenance``,
-``build(model, bundle, graph_file)``, with the file optional, and
-``render(fsm_graph, bundle, target, output_file)``. Each adds itself to the given bundle,
-which the tool creates with rdf-utils ``create_bundle`` for the package and fills with
-``load_pkg_prov``. ``build`` returns the graph and ``render`` the written file. The
-tool keeps that bundle unchanged. It records its own steps in a bundle of its own, including
-that coord-dsl acted on its behalf.
+A tool calls the same steps from ``coord_dsl.rdf.provenance`` on a ``Dataset`` it owns:
+``build(model, dataset, graph_id=None, bundle_id=None)`` returns the IDs of the FSM
+graph and the bundle, and ``render(dataset, graph_id, target, output_file, bundle_id=None)``
+the ID of the bundle. Each step creates the FSM graph or a bundle for coord-dsl when its ID
+is not given, and neither writes the dataset. The tool keeps coord-dsl's bundle unchanged.
+It records its own steps in a bundle of its own, including that coord-dsl acted on its
+behalf.
 
 .. _fsm-iri-tables:
 

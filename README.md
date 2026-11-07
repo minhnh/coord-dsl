@@ -98,8 +98,9 @@ transitions, and reactions.
 
 The `cpp` and `python` targets generate from the FSM graph in memory and write
 only the code. With `--provenance`, both steps are also recorded in one PROV
-bundle, written to `<output>.prov.ld.json`. The `graph` target takes the flag too
-and writes `<fsm>.prov.ld.json`.
+bundle, written with the FSM graph to `<output>.ld.json`, or in the `--format` given.
+The `graph` target
+takes the flag too and writes the bundle into its graph file.
 
 See [examples/models/fsm](examples/models/fsm/) for a complete model and Python
 and C++ controllers.

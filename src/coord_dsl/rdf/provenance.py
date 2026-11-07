@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: MPL-2.0
 # SPDX-FileCopyrightText: 2026 SECORO AG (secoro.uni-bremen.de)
 # Author: Vamsi Kalagaturu
-"""The generation steps of coord-dsl, each recording itself in the bundle it is given.
+"""The generation steps of coord-dsl, each recording itself in a bundle in the dataset it is given.
 
-``build`` turns a model into an FSM graph, saved when a file is given, and ``render`` turns that
-graph and a template into code. Each adds itself as a ``prov-ext:Transformation`` to the
-``prov:Bundle`` the caller gives it, attributed to the package and stating it. The graph is named by its ``urn:uuid:`` identifier and files by their
-location, with the hash of their bytes as ``dcterms:identifier``.
+``build`` turns a model into an FSM graph, and ``render`` turns that graph and a template into
+code. Both work in one ``Dataset``: the FSM graph and the ``prov:Bundle`` are named graphs in it,
+and each step adds itself to the bundle as a ``prov-ext:Transformation``, attributed to the
+package. Without a bundle, a step creates one for the package. Files are named by their location,
+with the hash of their bytes as ``dcterms:identifier``. Neither step writes the dataset.
 
 The package, named by its purl, is the agent, though PROV-DM 2.2.1.1 defines a software agent as
 running software.
@@ -17,13 +18,15 @@ from pathlib import Path
 from uuid import uuid4
 
 from jinja2 import TemplateNotFound
-from rdf_utils import DatasetFormat
 from rdf_utils.models.prov import (
     add_directory_location,
     add_entity,
     add_file_entity,
     add_file_hash,
+    create_bundle,
     get_git_info,
+    get_pkg_info,
+    load_pkg_prov,
     load_transformation_prov,
 )
 from rdf_utils.models.time import add_wall_instant
@@ -34,11 +37,27 @@ from coord_dsl.generators.fsm import gen_cpp_header, gen_json, gen_python_code
 from coord_dsl.rdf.fsm import get_fsm_graph
 from coord_dsl.rdf.vocab import URI_FSM_TYPE_FSM
 
-DOCUMENT_SUFFIX = f".prov.{DatasetFormat.JSON_LD.extension}"
 RENDERERS = {
     "cpp": (gen_cpp_header, "templates/fsm.hpp.jinja2"),
     "python": (gen_python_code, "templates/fsm.py.jinja2"),
 }
+
+
+def _bundle(dataset: Dataset, bundle_id: URIRef | None) -> Graph:
+    """The bundle to record in: BUNDLE_ID's, or a new one for the package when it is None."""
+    if bundle_id is None:
+        agent, version, revision, repository, dirty = get_pkg_info("coord_dsl")
+        bundle_id = create_bundle(dataset, agent)
+        load_pkg_prov(
+            dataset.graph(bundle_id),
+            agent,
+            "coord_dsl",
+            version,
+            revision,
+            repository,
+            dirty=dirty,
+        )
+    return dataset.graph(bundle_id)
 
 
 def _add_transformation(
@@ -60,33 +79,26 @@ def _add_transformation(
 
 def build(
     model,
-    bundle: Graph,
-    graph_file: Path | None = None,
-    dataset_format: DatasetFormat = DatasetFormat.JSON_LD,
-    auto_compact: bool = False,
-) -> Graph:
-    """Build the FSM graph of a model and add how it was made to a bundle.
+    dataset: Dataset,
+    graph_id: URIRef | None = None,
+    bundle_id: URIRef | None = None,
+) -> tuple[URIRef, URIRef]:
+    """Build the FSM graph of a model in a dataset and add how it was made to a bundle.
 
     Parameters:
         model: the textX model, loaded from a file; that file is the source
-        bundle: the `prov:Bundle` graph to add the transformation to, attributed to the package
-        graph_file: the file to save the graph to; the graph is not saved when None
-        dataset_format: the format to save it in
-        auto_compact: compact JSON-LD with the graph's namespaces
+        dataset: the dataset holding the FSM graph and the bundle
+        graph_id: the FSM graph to build into; a new `urn:uuid:` when None
+        bundle_id: the `prov:Bundle` to record in; a new one for the package when None
 
     Returns:
-        The graph
+        The IRIs of the FSM graph and the bundle
     """
+    graph_id = URIRef(uuid4().urn) if graph_id is None else graph_id
+    bundle = _bundle(dataset, bundle_id)
     started_at = datetime.now(UTC)
     source = Path(model._tx_filename).resolve()
-    fsm_graph, _ = get_fsm_graph(model)
-    if graph_file is not None:
-        graph_file = Path(graph_file).resolve()
-        dataset = Dataset()
-        dataset.add_graph(fsm_graph)
-        graph_file.write_text(
-            dataset.serialize(format=dataset_format, indent=2, auto_compact=auto_compact)
-        )
+    get_fsm_graph(model, dataset.graph(graph_id))
     ended_at = datetime.now(UTC)
 
     source_id = add_file_entity(bundle, add_directory_location(bundle, source.parent), source.name)
@@ -97,38 +109,35 @@ def build(
     if repository is not None:
         bundle.add((source_id, SDO.codeRepository, URIRef(repository)))
     activity = URIRef(uuid4().urn)
-    assert isinstance(fsm_graph.identifier, URIRef)
-    targets = [fsm_graph.identifier]
-    if graph_file is not None:
-        file_id = add_file_entity(
-            bundle,
-            add_directory_location(bundle, graph_file.parent),
-            graph_file.name,
-            generated_by=activity,
-        )
-        add_file_hash(bundle, file_id)
-        bundle.add((file_id, PROV.wasDerivedFrom, fsm_graph.identifier))
-        targets.append(file_id)
-    _add_transformation(bundle, activity, [source_id], targets, started_at, ended_at)
-    return fsm_graph
+    _add_transformation(bundle, activity, [source_id], [graph_id], started_at, ended_at)
+    assert isinstance(bundle.identifier, URIRef)
+    return graph_id, bundle.identifier
 
 
-def render(fsm_graph: Graph, bundle: Graph, target: str, output_file: Path) -> Path:
-    """Render an FSM graph to code and add how it was made to a bundle.
+def render(
+    dataset: Dataset,
+    graph_id: URIRef,
+    target: str,
+    output_file: Path,
+    bundle_id: URIRef | None = None,
+) -> URIRef:
+    """Render an FSM graph in a dataset to code and add how it was made to a bundle.
 
     Parameters:
-        fsm_graph: the graph `build` returned
-        bundle: the `prov:Bundle` graph to add the transformation to, attributed to the package,
-            with `load_pkg_prov` stating it so that the template can be found
+        dataset: the dataset holding the FSM graph and the bundle
+        graph_id: the FSM graph to render, e.g. from `build`
         target: what to render, a key of `RENDERERS`
         output_file: the file to write the code to
+        bundle_id: the `prov:Bundle` to record in; a new one for the package when None
 
     Returns:
-        The written file
+        The IRI of the bundle
 
     Raises:
         FileNotFoundError: when the template is missing; nothing is written
     """
+    fsm_graph = dataset.graph(graph_id)
+    bundle = _bundle(dataset, bundle_id)
     started_at = datetime.now(UTC)
     renderer, template_path = RENDERERS[target]
     output_file = Path(output_file).resolve()
@@ -147,8 +156,7 @@ def render(fsm_graph: Graph, bundle: Graph, target: str, output_file: Path) -> P
     output_file.write_text(code)
     ended_at = datetime.now(UTC)
 
-    assert isinstance(fsm_graph.identifier, URIRef)
-    add_entity(bundle, fsm_graph.identifier)
+    add_entity(bundle, graph_id)
     activity = URIRef(uuid4().urn)
     output_id = add_file_entity(
         bundle,
@@ -158,13 +166,7 @@ def render(fsm_graph: Graph, bundle: Graph, target: str, output_file: Path) -> P
     )
     add_file_hash(bundle, output_id)
     _add_transformation(
-        bundle, activity, [fsm_graph.identifier, template_id], [output_id], started_at, ended_at
+        bundle, activity, [graph_id, template_id], [output_id], started_at, ended_at
     )
-    return output_file
-
-
-def write_bundle(bundle: Graph, document: Path | str) -> None:
-    """Write a bundle as its own JSON-LD document, replacing any earlier one."""
-    dataset = Dataset()
-    dataset.add_graph(bundle)
-    Path(document).write_text(dataset.serialize(format=DatasetFormat.JSON_LD, indent=2))
+    assert isinstance(bundle.identifier, URIRef)
+    return bundle.identifier
