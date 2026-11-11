@@ -25,7 +25,7 @@ from rdf_utils.models.prov import (
     add_file_hash,
     create_bundle,
     get_git_info,
-    get_pkg_info,
+    get_py_pkg_info,
     load_pkg_prov,
     load_transformation_prov,
 )
@@ -44,12 +44,10 @@ def create_coord_dsl_bundle(dataset: Dataset) -> tuple[URIRef, URIRef]:
     Returns:
         The IDs of the bundle and of the package, to pass to `build` and `render`
     """
-    purl, version, revision, repository, dirty = get_pkg_info("coord_dsl")
-    bundle_id = create_bundle(dataset, purl)
-    load_pkg_prov(
-        dataset.graph(bundle_id), purl, "coord_dsl", version, revision, repository, dirty=dirty
-    )
-    return bundle_id, purl
+    info = get_py_pkg_info("coord_dsl")
+    bundle_id = create_bundle(dataset, info.purl)
+    load_pkg_prov(dataset.graph(bundle_id), info)
+    return bundle_id, info.purl
 
 
 def _add_transformation(
