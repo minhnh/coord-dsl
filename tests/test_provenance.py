@@ -9,7 +9,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from rdf_utils.constraints import check_shacl_constraints
-from rdf_utils.models.prov import get_git_info, get_pkg_info, resolve_location
+from rdf_utils.models.prov import get_git_info, get_py_pkg_info, resolve_location
 from rdf_utils.models.vocab import URI_PROV_EXT_TYPE_TRANSFORMATION
 from rdf_utils.namespace import URL_MM_PROV_EXT_SHACL, URL_MM_PROV_SHACL
 from rdflib import Dataset, Literal, URIRef
@@ -46,7 +46,7 @@ class ProvenanceTest(unittest.TestCase):
         self.assertIn((None, RDF.type, URI_FSM_TYPE_FSM), self.dataset.graph(graph_id))
         self.assertIsNotNone(bundle.value(source, DCTERMS.identifier))
         self.assertEqual(resolve_location(bundle, source), URIRef(MODEL.as_uri()))
-        self.assertEqual(agent_id, get_pkg_info("coord_dsl")[0])
+        self.assertEqual(agent_id, get_py_pkg_info("coord_dsl").purl)
         self.assertIn((activity, PROV.wasAssociatedWith, agent_id), bundle)
         self.assertIn((bundle_id, PROV.wasAttributedTo, agent_id), bundle)
         self.assertEqual(str(bundle.value(agent_id, SDO.name)), "coord_dsl")
