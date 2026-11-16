@@ -29,8 +29,7 @@ from rdf_utils.models.prov import (
     load_pkg_prov,
     load_transformation_prov,
 )
-from rdf_utils.models.time import add_wall_instant
-from rdflib import RDF, Dataset, Graph, Literal, URIRef
+from rdflib import RDF, Dataset, Literal, URIRef
 from rdflib.namespace import SDO
 
 from coord_dsl.generators.fsm import RENDERERS, gen_json
@@ -48,22 +47,6 @@ def create_coord_dsl_bundle(dataset: Dataset) -> tuple[URIRef, URIRef]:
     bundle_id = create_bundle(dataset, info.purl)
     load_pkg_prov(dataset.graph(bundle_id), info)
     return bundle_id, info.purl
-
-
-def _add_transformation(
-    bundle: Graph,
-    agent: URIRef,
-    activity: URIRef,
-    sources: list[URIRef],
-    targets: list[URIRef],
-    started_at: datetime,
-    ended_at: datetime,
-) -> None:
-    """Add a transformation by an agent to a bundle, with its wall-clock instants."""
-    beginning, end = URIRef(uuid4().urn), URIRef(uuid4().urn)
-    add_wall_instant(bundle, beginning, started_at)
-    add_wall_instant(bundle, end, ended_at)
-    load_transformation_prov(bundle, activity, sources, targets, agent, beginning, end)
 
 
 def build(
@@ -99,9 +82,8 @@ def build(
         bundle.add((source_id, SDO.identifier, Literal(f"{commit}-dirty" if dirty else commit)))
     if repository is not None:
         bundle.add((source_id, SDO.codeRepository, URIRef(repository)))
-    activity = URIRef(uuid4().urn)
-    _add_transformation(
-        bundle, agent_id, activity, [source_id], [graph_id], started_at, ended_at
+    load_transformation_prov(
+        bundle, [source_id], [graph_id], agent_id, started=started_at, ended=ended_at
     )
     return graph_id
 
@@ -147,14 +129,15 @@ def render(
     ended_at = datetime.now(UTC)
 
     add_entity(bundle, graph_id)
-    activity = URIRef(uuid4().urn)
     output_id = add_file_entity(
-        bundle,
-        add_directory_location(bundle, output_file.parent),
-        output_file.name,
-        generated_by=activity,
+        bundle, add_directory_location(bundle, output_file.parent), output_file.name
     )
     add_file_hash(bundle, output_id)
-    _add_transformation(
-        bundle, agent_id, activity, [graph_id, template_id], [output_id], started_at, ended_at
+    load_transformation_prov(
+        bundle,
+        [graph_id, template_id],
+        [output_id],
+        agent_id,
+        started=started_at,
+        ended=ended_at,
     )
