@@ -8,6 +8,8 @@ from pathlib import Path
 from uuid import uuid4
 
 from rdf_utils import DatasetFormat
+from rdf_utils.models.prov import create_pkg_bundle, record_graph_to_text
+from rdf_utils.models.textx import record_model_to_graph
 from rdflib import Dataset, URIRef
 from textx import GeneratorDesc, LanguageDesc, metamodel_from_file
 from textx.scoping import providers as scoping_providers
@@ -17,7 +19,6 @@ from coord_dsl.classes.fsm import FSM, Reaction, State, Transition
 from coord_dsl.generators.dot import FORMATS, fsm_dot, write_dot
 from coord_dsl.generators.fsm import RENDERERS, gen_json
 from coord_dsl.rdf.fsm import get_fsm_graph
-from coord_dsl.rdf.provenance import build, create_coord_dsl_bundle, render
 
 GRAMMAR_PATH = str(files("coord_dsl.metamodels").joinpath("fsm.tx"))
 
@@ -61,7 +62,8 @@ def graph_gen_file(metamodel, model, output_path, overwrite, debug, **kwargs):
         )
     dataset = Dataset()
     if "provenance" in kwargs:
-        build(model, dataset, *create_coord_dsl_bundle(dataset))
+        bundle_id, info = create_pkg_bundle(dataset, "coord_dsl")
+        record_model_to_graph(model, dataset, bundle_id, info.purl, get_fsm_graph)
     else:
         get_fsm_graph(model, dataset.graph(URIRef(uuid4().urn)))
     Path(output_path).write_text(
@@ -100,15 +102,24 @@ def gen_fsm_dot_file(metamodel, model, output_path, overwrite, debug, **kwargs):
 def gen_code(model, output_path, target, suffix, **kwargs):
     name = model.fsm.name
     output_path = Path(output_path or Path(model._tx_filename).parent / f"{name}{suffix}")
+    renderer, template = RENDERERS[target]
     if "provenance" not in kwargs:
         graph, fsm_ref = get_fsm_graph(model)
-        output_path.write_text(RENDERERS[target][0](gen_json(graph, fsm_ref)))
+        output_path.write_text(renderer(gen_json(graph, fsm_ref)))
         return output_path
     dataset_format = DatasetFormat(kwargs.get("format", DatasetFormat.JSON_LD))
     dataset = Dataset()
-    bundle_id, agent_id = create_coord_dsl_bundle(dataset)
-    graph_id = build(model, dataset, bundle_id, agent_id)
-    render(dataset, graph_id, bundle_id, agent_id, target, output_path)
+    bundle_id, info = create_pkg_bundle(dataset, "coord_dsl")
+    graph_id = record_model_to_graph(model, dataset, bundle_id, info.purl, get_fsm_graph)
+    record_graph_to_text(
+        dataset,
+        graph_id,
+        bundle_id,
+        info,
+        lambda graph: renderer(gen_json(graph, model.fsm.uri)),
+        output_path,
+        source_files=[Path(__file__).parent / template],
+    )
     Path(f"{output_path}.{dataset_format.extension}").write_text(
         dataset.serialize(format=dataset_format, indent=2, auto_compact="autocompact" in kwargs)
     )
