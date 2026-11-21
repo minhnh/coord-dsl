@@ -125,13 +125,10 @@ They generate from the FSM graph in memory and write only the code. With
 ``--provenance``, both steps are also recorded in one PROV bundle, written with the FSM
 graph to e.g. ``ex_fsm.hpp.ld.json``, or in the ``--format`` given.
 
-A tool calls the same steps from ``coord_dsl.rdf.provenance`` on a ``Dataset`` it owns.
-``create_coord_dsl_bundle(dataset)`` creates a bundle there stating the coord_dsl package
-and returns the IDs of the bundle and the package, which
-``build(model, dataset, bundle_id, agent_id, graph_id=None)`` and
-``render(dataset, graph_id, bundle_id, agent_id, target, output_file)`` take. ``build``
-returns the ID of the FSM graph, new when not given, and ``render`` writes the code.
-Neither writes the dataset. The tool keeps coord-dsl's bundle unchanged.
+A tool calls the same steps, rdf-utils ``record_model_to_graph`` with ``get_fsm_graph``
+and ``record_graph_to_text`` with a renderer and template of ``RENDERERS``, in a
+``Dataset`` it owns, holding the bundle that ``create_pkg_bundle(dataset, "coord_dsl")``
+creates. Neither writes the dataset. The tool keeps coord-dsl's bundle unchanged.
 It records its own steps in a bundle of its own, including that coord-dsl acted on its
 behalf.
 
